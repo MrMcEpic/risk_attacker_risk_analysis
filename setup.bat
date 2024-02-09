@@ -1,0 +1,9 @@
+@echo off
+echo Creating virtual environment named myenv...
+python -m venv myenv
+echo Activating virtual environment...
+call myenv\Scripts\activate
+echo Installing required packages...
+pip install matplotlib pandas seaborn
+echo Setup is complete!
+pause
