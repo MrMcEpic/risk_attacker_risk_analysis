@@ -9,9 +9,14 @@ use colored::Colorize;
 use rand::Rng;
 use rayon::prelude::*;
 use std::fs::OpenOptions;
+use std::io;
 use std::io::Write;
+use std::process::Output;
 
-fn run_simulation(attacker_dice_count: usize, defender_dice_count: usize) {
+fn run_basic_dice_simulation(
+    attacker_dice_count: usize,
+    defender_dice_count: usize,
+) -> std::io::Result<()> {
     let simulations = 10_000_000;
     let total_games = simulations * defender_dice_count;
 
@@ -59,23 +64,23 @@ fn run_simulation(attacker_dice_count: usize, defender_dice_count: usize) {
         .write(true)
         .append(true)
         .create(true)
-        .open("data/simulation_data.csv")
-        .unwrap();
+        .open("data/simulation_data.csv")?;
 
     // Write the data to the file
     writeln!(
         file,
         "{},{},{}",
         attacker_dice_count, defender_dice_count, win_percentage
-    )
-    .unwrap();
+    )?;
+
+    Ok(())
 }
 
 fn run_battle_simulation(
     mut attacker_soldiers: usize,
     mut defender_soldiers: usize,
     simulations: usize,
-) {
+) -> std::io::Result<()> {
     let initial_attacker_soldiers: usize = attacker_soldiers;
     let initial_defender_soldiers: usize = defender_soldiers;
     let mut attacker_wins = 0;
@@ -137,54 +142,60 @@ fn run_battle_simulation(
         .write(true)
         .append(true)
         .create(true)
-        .open("data/battle_simulation_data.csv")
-        .unwrap();
+        .open("data/battle_simulation_data.csv")?;
 
     // Write the data to the file
     writeln!(
         file,
         "{},{},{}",
         attacker_soldiers, defender_soldiers, win_percentage
-    )
-    .unwrap();
+    )?;
+
+    Ok(())
 }
 
 #[allow(dead_code)]
-fn print_out_default_data() {
+fn print_out_basic_dice() -> std::io::Result<()> {
     println!(
         "{}",
         "-------------Attacker vs Defender Single Dice Roll Win Percentages-------------".cyan()
     );
-    run_simulation(3, 2);
-    run_simulation(2, 2);
-    run_simulation(1, 2);
-    run_simulation(3, 1);
-    run_simulation(2, 1);
-    run_simulation(1, 1);
+
+    for attacker in (1..=3).rev() {
+        for defender in (1..=2).rev() {
+            run_basic_dice_simulation(attacker, defender)?;
+        }
+    }
+
     println!(
         "{}",
         "-------------------------------------------------------------------------------".cyan()
     );
+
+    Ok(())
 }
 
 #[allow(dead_code)]
-fn print_out_specific_data() {
+fn print_out_battle_data() -> std::io::Result<()> {
     println!(
         "{}",
         "--------------Attacker vs Defender Entire Battle Win Percentages---------------".cyan()
     );
-    //run_battle_simulation(3, 2, 1_000_000);
+
     let simulations = 100_000;
 
     for attacker in (1..=20).rev() {
         for defender in (1..=20).rev() {
-            run_battle_simulation(attacker, defender, simulations);
+            run_battle_simulation(attacker, defender, simulations)?;
         }
     }
-    print!(
+
+    println!(
         "{}",
         "--------------------------------------------------------------------------------".cyan()
     );
+
+    Ok(())
 }
 
 fn erase_files() -> std::io::Result<()> {
@@ -193,26 +204,54 @@ fn erase_files() -> std::io::Result<()> {
     Ok(())
 }
 
-fn main() {
-    match erase_files() {
-        Ok(()) => (),
-        Err(e) => println!("Failed to erase files: {}", e),
-    }
-    print_out_default_data();
-    print_out_specific_data();
-
-    let python_path = std::env::current_dir()
-        .expect("Failed to get current directory")
-        .join("myenv/scripts/python.exe");
-
-    let script_path = std::env::current_dir()
-        .expect("Failed to get current directory")
-        .join("python/main.py");
+fn execute_python_script() -> io::Result<Output> {
+    let python_path = std::env::current_dir()?.join("myenv/scripts/python.exe");
+    let script_path = std::env::current_dir()?.join("python/main.py");
 
     let output = std::process::Command::new(python_path)
         .arg(script_path)
-        .output()
-        .expect("Failed to execute command");
+        .output()?;
 
-    println!("status: {}", output.status);
+    Ok(output)
+}
+
+fn main() {
+    match erase_files() {
+        Ok(()) => (),
+        Err(e) => {
+            eprintln!("Failed to erase files: {}", e);
+            std::process::exit(1);
+        }
+    }
+
+    match print_out_basic_dice() {
+        Ok(()) => (),
+        Err(e) => {
+            eprintln!("Error handling basic dice data: {}", e);
+            std::process::exit(1);
+        }
+    }
+
+    match print_out_battle_data() {
+        Ok(()) => (),
+        Err(e) => {
+            eprintln!("Error handling battle data: {}", e);
+            std::process::exit(1);
+        }
+    }
+
+    match execute_python_script() {
+        Ok(output) => {
+            if !output.stdout.is_empty() {
+                println!(
+                    "Python script output: {}",
+                    String::from_utf8_lossy(&output.stdout)
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("Error executing python script: {}", e);
+            std::process::exit(1);
+        }
+    }
 }
