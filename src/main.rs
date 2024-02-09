@@ -88,8 +88,15 @@ fn run_battle_simulation(
     for _ in 0..simulations {
         let mut rng = rand::thread_rng();
 
-        while attacker_soldiers > 0 && defender_soldiers > 0 {
-            let attacker_dice_count = attacker_soldiers.min(3);
+        while attacker_soldiers > 1 && defender_soldiers > 0 {
+            let attacker_dice_count = if attacker_soldiers >= 4 {
+                3
+            } else if attacker_soldiers == 3 {
+                2
+            } else {
+                1
+            };
+
             let defender_dice_count = defender_soldiers.min(2);
 
             let mut attacker_dice: Vec<_> = (0..attacker_dice_count)
@@ -111,7 +118,7 @@ fn run_battle_simulation(
             }
         }
 
-        if attacker_soldiers > 0 {
+        if attacker_soldiers > 1 {
             attacker_wins += 1;
         }
 
@@ -184,7 +191,7 @@ fn print_out_battle_data() -> std::io::Result<()> {
 
     let simulations = 100_000;
 
-    for attacker in (1..=20).rev() {
+    for attacker in (2..=20).rev() {
         for defender in (1..=20).rev() {
             run_battle_simulation(attacker, defender, simulations)?;
         }
