@@ -14,7 +14,7 @@ def read_and_pivot_data(file_path, header_names):
 
 def create_heatmap(data_pivot, title, ax, annot_kws_size, x_label, y_label):
 	"""Creates a heatmap from pivoted data."""
-	heatmap = sns.heatmap(data_pivot, cmap='RdYlGn', ax=ax, annot=True, fmt=".1f", annot_kws={"size": annot_kws_size})
+	heatmap = sns.heatmap(data_pivot, cmap='RdYlGn', ax=ax, annot=True, fmt=".1f", annot_kws={"size": annot_kws_size}, vmin=0, vmax=100)
 	heatmap.collections[0].colorbar.set_label('Percentage that the Attacker Wins', rotation=270, labelpad=20)
 	ax.set_title(title)
 	ax.set_xlabel(x_label)
