@@ -20,6 +20,10 @@ def create_heatmap(data_pivot, title, ax, annot_kws_size, x_label, y_label):
 	ax.set_xlabel(x_label)
 	ax.set_ylabel(y_label)
 
+	# Calculate the percentage of data that is 50% or above for attackers
+	percentage_above_50 = (data_pivot >= 50).mean().mean() * 100
+	ax.text(0.5, -0.1, f"{percentage_above_50:.2f}% of all data is 50% or above for attackers.", size=12, ha="center", transform=ax.transAxes)
+
 def main():
 	# Read and pivot the data
 	simulation_data_pivot = read_and_pivot_data('data/simulation_data.csv', ['Attacker Dice', 'Defender Dice', 'Win Percentage'])
@@ -29,7 +33,7 @@ def main():
 	fig, axs = plt.subplots(ncols=2, figsize=(20, 8))
 
 	# Create the heatmaps
-	create_heatmap(simulation_data_pivot, 'Dice Roll Simulation Heatmap', axs[0], 20, 'Defender Dice', 'Attacker Dice')
+	create_heatmap(simulation_data_pivot, 'Single Dice Roll Simulation Heatmap', axs[0], 20, 'Defender Dice', 'Attacker Dice')
 	create_heatmap(battle_simulation_data_pivot, 'Battle Simulation Heatmap', axs[1], 5, 'Defender Soldiers', 'Attacker Soldiers')
 
 	plt.show()
