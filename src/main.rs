@@ -8,9 +8,11 @@
 use colored::Colorize;
 use rand::Rng;
 use rayon::prelude::*;
+use std::fs;
 use std::fs::OpenOptions;
 use std::io;
 use std::io::Write;
+use std::path::Path;
 use std::process::Output;
 
 fn run_basic_dice_simulation(
@@ -59,11 +61,10 @@ fn run_basic_dice_simulation(
         colored_win_percentage
     );
 
-    // Open the file in append mode (creates it if it doesn't exist)
+    // Open the file in append mode (creates it if it doesnt exist)
     let mut file = OpenOptions::new()
-        .write(true)
-        .append(true)
         .create(true)
+        .append(true)
         .open("data/simulation_data.csv")?;
 
     // Write the data to the file
@@ -144,11 +145,10 @@ fn run_battle_simulation(
         colored_win_percentage
     );
 
-    // Open the file in append mode (creates it if it doesn't exist)
+    // Open the file in append mode (creates it if it doesnt exist)
     let mut file = OpenOptions::new()
-        .write(true)
-        .append(true)
         .create(true)
+        .append(true)
         .open("data/battle_simulation_data.csv")?;
 
     // Write the data to the file
@@ -205,9 +205,19 @@ fn print_out_battle_data() -> std::io::Result<()> {
     Ok(())
 }
 
-fn erase_files() -> std::io::Result<()> {
-    std::fs::remove_file("data/simulation_data.csv")?;
-    std::fs::remove_file("data/battle_simulation_data.csv")?;
+fn setup_files() -> io::Result<()> {
+    if !Path::new("data").exists() {
+        fs::create_dir(Path::new("data"))?;
+    }
+
+    if Path::new("data/simulation_data.csv").exists() {
+        fs::remove_file("data/simulation_data.csv")?;
+    }
+
+    if Path::new("data/battle_simulation_data.csv").exists() {
+        fs::remove_file("data/battle_simulation_data.csv")?;
+    }
+
     Ok(())
 }
 
@@ -223,7 +233,7 @@ fn execute_python_script() -> io::Result<Output> {
 }
 
 fn main() {
-    match erase_files() {
+    match setup_files() {
         Ok(()) => (),
         Err(e) => {
             eprintln!("Failed to erase files: {}", e);
